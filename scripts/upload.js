@@ -3,6 +3,7 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
+const app = process.env.APP_NAME || 'app1';
 const isWatch = process.argv.includes("watch");
 
 const args = [
@@ -15,7 +16,7 @@ if (isWatch) {
   args.push("--watch");
 }
 
-args.push("customize-manifest.json");
+args.push(`apps/${app}/customize-manifest.json`);
 
 const child = spawn("kintone-customize-uploader", args, {
   stdio: "inherit"
