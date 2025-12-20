@@ -1,1 +1,2 @@
-console.log('Hello from app2');
+// App2 entry point
+// Add your Kintone customization code here

@@ -1,7 +1,19 @@
 import { spawn } from "child_process";
 import * as dotenv from "dotenv";
+import { existsSync } from "fs";
 
 dotenv.config();
+
+// Validate required environment variables
+const requiredEnvVars = ['KINTONE_BASE_URL', 'KINTONE_USERNAME', 'KINTONE_PASSWORD'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('Error: Missing required environment variables:');
+  missingEnvVars.forEach(varName => console.error(`  - ${varName}`));
+  console.error('\nPlease set these variables in your .env file or environment.');
+  process.exit(1);
+}
 
 const app = process.env.APP_NAME || 'app1';
 const isWatch = process.argv.includes("watch");
@@ -16,7 +28,16 @@ if (isWatch) {
   args.push("--watch");
 }
 
-args.push(`apps/${app}/customize-manifest.json`);
+const manifestPath = `apps/${app}/customize-manifest.json`;
+
+// Check if customize-manifest.json exists
+if (!existsSync(manifestPath)) {
+  console.error(`Error: customize-manifest.json not found at ${manifestPath}`);
+  console.error(`Please create the manifest file for app: ${app}`);
+  process.exit(1);
+}
+
+args.push(manifestPath);
 
 const child = spawn("kintone-customize-uploader", args, {
   stdio: "inherit"

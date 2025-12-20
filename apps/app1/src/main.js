@@ -13,8 +13,9 @@
   kintone.events.on(['app.record.edit.show', 'app.record.create.show', 'app.record.index.edit.show'], (event) => {
     const record = event.record;
 
-    console.log('test', record)
+    // Process record here if needed
 
+    return event;
   });
 
 
