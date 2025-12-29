@@ -1,16 +1,25 @@
 {
   "name": "kintone-customize-vite",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "TypeScript対応 kintoneカスタマイズ開発環境 with Vite",
   "type": "module",
   "scripts": {
-    "dev": "APP_NAME=app1 vite",
-    "build": "APP_NAME=app1 vite build"
+    "dev": "tsx scripts/dev.ts",
+    "build": "tsx scripts/build.ts",
+    "upload": "tsx scripts/upload.ts",
+    "sync": "tsx scripts/sync-existing.ts",
+    "create": "tsx scripts/create-app.ts",
+    "remove": "tsx scripts/remove-app.ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@kintone/customize-uploader": "^8.0.14",
-    "vite": "^6.3.5"
-  },
-  "dependencies": {
-    "dotenv": "^16.5.0"
+    "@kintone/rest-api-client": "^5.6.0",
+    "@types/node": "^22.10.2",
+    "chokidar": "^4.0.3",
+    "dotenv": "^16.5.0",
+    "terser": "^5.37.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.6"
   }
 }
