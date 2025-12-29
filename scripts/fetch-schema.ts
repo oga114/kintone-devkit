@@ -2,7 +2,7 @@ import { KintoneRestAPIClient } from '@kintone/rest-api-client';
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { apps, kintoneConfig } from '../kintone.config.js';
+import { apps, getKintoneConfig, getAppId } from '../kintone.config.js';
 import { getTargetApps } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,6 +13,7 @@ interface AppSchema {
   appName: string;
   environment: string;
   fetchedAt: string;
+  baseUrl: string;
   settings: any;
   fields: any;
   layout: any;
@@ -26,16 +27,20 @@ async function fetchSchema(): Promise<void> {
   const targetApps = getTargetApps();
   const environment = process.env.KINTONE_ENV || 'dev';
 
-  console.log(`🔍 kintoneアプリのスキーマを取得します (環境: ${environment})\n`);
+  // 環境に応じた接続設定を取得
+  const config = getKintoneConfig(environment);
 
-  if (!kintoneConfig.baseUrl) {
+  console.log(`🔍 kintoneアプリのスキーマを取得します (環境: ${environment})\n`);
+  console.log(`   接続先: ${config.baseUrl}\n`);
+
+  if (!config.baseUrl) {
     console.error('❌ KINTONE_BASE_URLが設定されていません');
     process.exit(1);
   }
 
   const client = new KintoneRestAPIClient({
-    baseUrl: kintoneConfig.baseUrl,
-    auth: kintoneConfig.auth
+    baseUrl: config.baseUrl,
+    auth: config.auth
   });
 
   const appEntries = Object.entries(apps);
@@ -51,10 +56,11 @@ async function fetchSchema(): Promise<void> {
       continue;
     }
 
-    const appId = appConfig.id;
+    // 環境に応じたアプリIDを取得
+    const appId = getAppId(appName, environment);
 
     if (!appId) {
-      console.log(`⚠️  ${appName}: アプリIDが設定されていません`);
+      console.log(`⚠️  ${appName}: ${environment}環境のアプリIDが設定されていません`);
       continue;
     }
 
@@ -80,6 +86,7 @@ async function fetchSchema(): Promise<void> {
         appName,
         environment,
         fetchedAt: new Date().toISOString(),
+        baseUrl: config.baseUrl!,
         settings: settings,
         fields: fields.properties,
         layout: layout.layout,

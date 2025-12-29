@@ -2,7 +2,7 @@ import { KintoneRestAPIClient } from '@kintone/rest-api-client';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { apps, kintoneConfig } from '../kintone.config.js';
+import { apps, kintoneConfig, getAppId } from '../kintone.config.js';
 import { getTargetApps } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -64,7 +64,8 @@ async function syncExistingFiles(): Promise<void> {
       continue;
     }
 
-    const appId = appConfig.id;
+    // 開発環境のアプリIDを使用
+    const appId = getAppId(appName, 'dev');
 
     if (!appId) {
       console.log(`⚠️  ${appName}: アプリIDが設定されていません`);

@@ -194,6 +194,104 @@ KINTONE_ENV=dev
 MY_APP_ID=123
 ```
 
+## マルチ環境対応
+
+開発環境と本番環境を分離して運用できます。2つのパターンに対応しています。
+
+### ケース1: 同一アカウント内でスペース分離
+
+同じkintoneアカウント内で、開発用スペースと本番用スペースに別々のアプリがある場合の設定です。
+
+```
+例: https://example.cybozu.com
+    ├── 開発スペース
+    │   └── 顧客管理アプリ (ID: 100)  ← 開発・テスト用
+    └── 本番スペース
+        └── 顧客管理アプリ (ID: 200)  ← 本番運用
+```
+
+**.env設定例:**
+
+```env
+# 接続設定（開発/本番で共通）
+KINTONE_BASE_URL=https://example.cybozu.com
+KINTONE_USERNAME=admin@example.com
+KINTONE_PASSWORD=password
+
+# 本番環境の接続設定は省略（開発環境と同じ値を使用）
+
+# アプリIDを環境別に設定
+CUSTOMER_APP_DEV_ID=100
+CUSTOMER_APP_PROD_ID=200
+```
+
+**運用フロー:**
+
+```bash
+# 開発環境のスキーマを取得
+npm run schema
+
+# 本番環境のスキーマを取得（接続先は同じ、アプリIDが異なる）
+KINTONE_ENV=prod npm run schema
+
+# 差分を比較
+npm run schema:diff
+```
+
+### ケース2: アカウント分離
+
+開発環境と本番環境で別々のkintoneアカウント（サブドメイン）を使用する場合の設定です。
+
+```
+開発: https://dev.cybozu.com
+      └── 顧客管理アプリ (ID: 100)
+
+本番: https://prod.cybozu.com
+      └── 顧客管理アプリ (ID: 100)  ← 同じIDでもOK
+```
+
+**.env設定例:**
+
+```env
+# 開発環境の接続設定
+KINTONE_BASE_URL=https://dev.cybozu.com
+KINTONE_USERNAME=dev-admin@example.com
+KINTONE_PASSWORD=dev-password
+
+# 本番環境の接続設定（別アカウント）
+KINTONE_PROD_BASE_URL=https://prod.cybozu.com
+KINTONE_PROD_USERNAME=prod-admin@example.com
+KINTONE_PROD_PASSWORD=prod-password
+
+# アプリID（両環境で同じIDの場合）
+CUSTOMER_APP_DEV_ID=100
+# CUSTOMER_APP_PROD_ID を省略すると DEV_ID が使用される
+```
+
+**運用フロー:**
+
+```bash
+# 開発環境のスキーマを取得
+npm run schema
+
+# 本番環境のスキーマを取得（別アカウントに接続）
+KINTONE_ENV=prod npm run schema
+
+# 差分を比較
+npm run schema:diff
+```
+
+### フォールバック動作
+
+| 設定 | 値がある場合 | 省略時 |
+|------|-------------|--------|
+| `KINTONE_PROD_BASE_URL` | その値を使用 | `KINTONE_BASE_URL`を使用 |
+| `KINTONE_PROD_USERNAME` | その値を使用 | `KINTONE_USERNAME`を使用 |
+| `KINTONE_PROD_PASSWORD` | その値を使用 | `KINTONE_PASSWORD`を使用 |
+| `<APP>_PROD_ID` | その値を使用 | `<APP>_DEV_ID`または`<APP>_ID`を使用 |
+
+これにより、ケース1では本番用接続設定を省略でき、ケース2では完全に分離した設定が可能です。
+
 ## TypeScriptでの開発
 
 kintoneの型定義が`src/types/kintone.d.ts`に含まれています。

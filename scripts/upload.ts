@@ -2,7 +2,7 @@ import { KintoneRestAPIClient } from '@kintone/rest-api-client';
 import { readFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { apps, kintoneConfig } from '../kintone.config.js';
+import { apps, kintoneConfig, getAppId } from '../kintone.config.js';
 import { getTargetApps } from './utils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -66,7 +66,8 @@ export async function uploadToKintone(targetApps: string[] | null = null): Promi
       continue;
     }
 
-    const appId = appConfig.id;
+    // 開発環境のアプリIDを使用
+    const appId = getAppId(appName, 'dev');
     const jsFileName = `${appName}.js`;
     const cssFileName = `${appName}.css`;
     const bundlePath = resolve(__dirname, '../dist', appName, jsFileName);
