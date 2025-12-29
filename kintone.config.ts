@@ -34,16 +34,11 @@ export interface EnvironmentConfigs {
 // アプリの設定
 // npm run create で自動追加されます
 export const apps: Apps = {
-  'vite-test-app1-dev': {
-    name: 'vite-test-app1-dev',
+  'vite-test-app1': {
+    name: 'vite-test-app1',
     ids: {
-      dev: process.env.VITE_TEST_APP1_DEV_ID
-    }
-  },
-  'vite-test-app1-prod': {
-    name: 'vite-test-app1-prod',
-    ids: {
-      dev: process.env.VITE_TEST_APP1_PROD_ID
+      dev: process.env.VITE_TEST_APP1_DEV_ID,
+      prod: process.env.VITE_TEST_APP1_PROD_ID
     }
   }
 };

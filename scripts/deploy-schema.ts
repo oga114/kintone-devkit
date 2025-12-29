@@ -222,8 +222,8 @@ async function deploySchema(
     console.log(`   ➕ フィールドを追加中...`);
     const properties: Record<string, any> = {};
     for (const code of plan.fieldsToAdd) {
-      const { code: _, ...fieldWithoutCode } = sourceSchema.fields[code];
-      properties[code] = fieldWithoutCode;
+      // フィールド設定をコピー（codeは含める）
+      properties[code] = { ...sourceSchema.fields[code] };
     }
     await client.app.addFormFields({ app: appId, properties });
     console.log(`      ✅ ${plan.fieldsToAdd.length}件のフィールドを追加しました`);
