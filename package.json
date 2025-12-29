@@ -13,6 +13,8 @@
     "schema": "tsx scripts/fetch-schema.ts",
     "schema:diff": "tsx scripts/diff-schema.ts",
     "schema:deploy": "tsx scripts/deploy-schema.ts",
+    "backup": "tsx scripts/backup-records.ts",
+    "backup:restore": "tsx scripts/restore-records.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

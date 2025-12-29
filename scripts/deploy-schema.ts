@@ -1,5 +1,5 @@
 import { KintoneRestAPIClient } from '@kintone/rest-api-client';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { apps, getKintoneConfig, getAppId } from '../kintone.config.js';
@@ -61,6 +61,108 @@ const IMMUTABLE_FIELD_TYPES = new Set([
   'RECORD_NUMBER', 'CREATOR', 'MODIFIER', 'CREATED_TIME', 'UPDATED_TIME',
   'CATEGORY', 'STATUS', 'STATUS_ASSIGNEE'
 ]);
+
+const RECORDS_PER_REQUEST = 500;
+
+interface BackupMetadata {
+  appId: string;
+  appName: string;
+  environment: string;
+  backupAt: string;
+  baseUrl: string;
+  totalRecords: number;
+  reason: string;
+}
+
+interface BackupData {
+  metadata: BackupMetadata;
+  records: any[];
+}
+
+/**
+ * 全レコードを取得（10,000件以上対応）
+ */
+async function fetchAllRecords(
+  client: KintoneRestAPIClient,
+  appId: string
+): Promise<any[]> {
+  const allRecords: any[] = [];
+  let lastId = 0;
+
+  while (true) {
+    const idCondition = `$id > ${lastId}`;
+    const fullQuery = `${idCondition} order by $id asc limit ${RECORDS_PER_REQUEST}`;
+
+    const response = await client.record.getRecords({
+      app: appId,
+      query: fullQuery
+    });
+
+    const records = response.records;
+
+    if (records.length === 0) {
+      break;
+    }
+
+    allRecords.push(...records);
+    process.stdout.write(`\r      📥 ${allRecords.length}件取得中...`);
+
+    const lastRecord = records[records.length - 1];
+    lastId = parseInt(String(lastRecord.$id.value), 10);
+
+    if (records.length < RECORDS_PER_REQUEST) {
+      break;
+    }
+  }
+
+  return allRecords;
+}
+
+/**
+ * デプロイ前にレコードをバックアップ
+ */
+async function backupBeforeDeploy(
+  client: KintoneRestAPIClient,
+  appName: string,
+  appId: string,
+  environment: string,
+  baseUrl: string
+): Promise<string> {
+  console.log(`   💾 レコードをバックアップ中...`);
+
+  const records = await fetchAllRecords(client, appId);
+
+  if (records.length === 0) {
+    console.log(`\r      ⚠️  バックアップ対象のレコードがありません`);
+    return '';
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backupData: BackupData = {
+    metadata: {
+      appId,
+      appName,
+      environment,
+      backupAt: new Date().toISOString(),
+      baseUrl,
+      totalRecords: records.length,
+      reason: 'pre-deploy'
+    },
+    records
+  };
+
+  const backupDir = resolve(__dirname, '../.kintone', appName, 'backups');
+  if (!existsSync(backupDir)) {
+    mkdirSync(backupDir, { recursive: true });
+  }
+
+  const backupPath = resolve(backupDir, `backup-${environment}-${timestamp}.json`);
+  writeFileSync(backupPath, JSON.stringify(backupData, null, 2), 'utf-8');
+
+  console.log(`\r      ✅ バックアップ完了: ${records.length}件 → ${backupPath}`);
+
+  return backupPath;
+}
 
 /**
  * スキーマファイルを読み込む
@@ -295,6 +397,7 @@ function parseArgs(): {
   sourceEnv: string;
   targetEnv: string;
   dryRun: boolean;
+  backup: boolean;
   targetApps: string[] | null;
 } {
   const args = process.argv.slice(2);
@@ -302,6 +405,7 @@ function parseArgs(): {
   let sourceEnv = 'dev';
   let targetEnv = 'prod';
   let dryRun = true;
+  let backup = false;
   let targetApps: string[] | null = null;
 
   for (let i = 0; i < args.length; i++) {
@@ -312,23 +416,28 @@ function parseArgs(): {
       targetEnv = args[++i];
     } else if (arg === '--execute' || arg === '-e') {
       dryRun = false;
+    } else if (arg === '--backup' || arg === '-b') {
+      backup = true;
     } else if (!arg.startsWith('--') && !arg.startsWith('-')) {
       // オプション引数でなければアプリ名として解釈
       targetApps = arg.split(',').map(a => a.trim());
     }
   }
 
-  return { sourceEnv, targetEnv, dryRun, targetApps };
+  return { sourceEnv, targetEnv, dryRun, backup, targetApps };
 }
 
 /**
  * メイン処理
  */
 async function main(): Promise<void> {
-  const { sourceEnv, targetEnv, dryRun, targetApps } = parseArgs();
+  const { sourceEnv, targetEnv, dryRun, backup, targetApps } = parseArgs();
 
   console.log(`🔄 スキーマデプロイ (${sourceEnv} → ${targetEnv})`);
   console.log(`   モード: ${dryRun ? 'ドライラン（確認のみ）' : '実行'}`);
+  if (backup && !dryRun) {
+    console.log(`   バックアップ: 有効`);
+  }
   if (dryRun) {
     console.log(`   ※ 実際にデプロイするには --execute オプションを追加してください`);
   }
@@ -389,6 +498,12 @@ async function main(): Promise<void> {
       if (!dryRun) {
         try {
           console.log(`📦 ${appName} (App ID: ${targetAppId}) にデプロイ中...`);
+
+          // バックアップが有効な場合、デプロイ前にバックアップ
+          if (backup) {
+            await backupBeforeDeploy(client, appName, targetAppId, targetEnv, targetConfig.baseUrl!);
+          }
+
           await deploySchema(client, targetAppId, plan, sourceSchema, targetSchema);
           console.log(`✅ ${appName} のデプロイが完了しました\n`);
         } catch (err) {

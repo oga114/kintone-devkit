@@ -84,6 +84,10 @@ kintone-customize-vite/
 | `npm run schema:diff` | 環境間のスキーマ差分を検出 |
 | `npm run schema:deploy` | スキーマを別環境にデプロイ（ドライラン） |
 | `npm run schema:deploy -- --execute` | スキーマを別環境にデプロイ（実行） |
+| `npm run schema:deploy -- --execute --backup` | バックアップ付きデプロイ |
+| `npm run backup` | レコードをバックアップ（全アプリ） |
+| `npm run backup -- <app>` | レコードをバックアップ（特定アプリ） |
+| `npm run backup:restore -- <app>` | バックアップからレコードを復元 |
 | `npm run typecheck` | TypeScript型チェック |
 
 ## 使い方
@@ -229,6 +233,58 @@ npm run schema:deploy -- my-app --execute
 - フィールドの型は変更できません（kintone APIの制約）
 - 本番環境へ反映する前に必ずドライランで確認してください
 - カスタマイズ（JS/CSS）は同期されません（アプリID依存のため）
+
+### 9. レコードのバックアップ
+
+デプロイ前にレコードをバックアップできます。フィールド削除時のデータ損失を防ぎます。
+
+```bash
+# 開発環境のレコードをバックアップ
+npm run backup -- my-app
+
+# 本番環境のレコードをバックアップ
+KINTONE_ENV=prod npm run backup -- my-app
+
+# 全アプリをバックアップ
+npm run backup
+
+# クエリを指定してバックアップ（部分バックアップ）
+npm run backup -- my-app --query "作成日時 > \"2024-01-01\""
+
+# デプロイ時に自動バックアップ
+npm run schema:deploy -- --execute --backup
+```
+
+バックアップファイルは `.kintone/<app>/backups/` に保存されます。
+
+**API制限への対応:**
+
+| 制限 | 対応 |
+|------|------|
+| 1リクエスト500件 | 自動ページネーション |
+| オフセット10,000件上限 | $idベースのカーソル方式 |
+
+### 10. バックアップからの復元
+
+```bash
+# 最新のバックアップから復元
+npm run backup:restore -- my-app
+
+# 特定のバックアップファイルから復元
+npm run backup:restore -- my-app --file backup-dev-2024-01-01T12-00-00-000Z.json
+
+# 別環境に復元
+npm run backup:restore -- my-app --env prod
+
+# 確認なしで実行
+npm run backup:restore -- my-app --force
+```
+
+**注意事項:**
+
+- 復元はレコードを追加します（既存レコードは削除されません）
+- システムフィールド（レコード番号、作成者など）は復元されません
+- 重複を避けるには、復元前に既存レコードを削除してください
 
 ## 環境変数の設定
 
