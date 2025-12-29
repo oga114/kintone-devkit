@@ -94,12 +94,33 @@ kintone-customize-vite/
 npm run create
 ```
 
-対話形式でアプリ名とkintoneアプリIDを入力すると、以下が自動生成されます：
+対話形式で環境パターンを選択し、アプリを作成します。
 
-- `src/apps/<appName>/index.ts` - エントリーポイント
-- `src/apps/<appName>/style.css` - スタイル
-- `.env`への設定追加
-- `kintone.config.ts`への設定追加
+**環境パターン:**
+
+| パターン | 説明 | 用途 |
+|---------|------|------|
+| 1. 単一環境 | 開発環境のみ | シンプルな構成 |
+| 2. ソースコード分離 | 開発用と本番用で別々のソース | アプリID依存のコードがある場合 |
+| 3. スキーマ同期用 | 1つのソースで複数環境ID | 差分検出・デプロイを使う場合 |
+
+**パターン別の生成例:**
+
+```
+# パターン1: 単一環境
+src/apps/my-app/
+.env: MY_APP_DEV_ID=100
+
+# パターン2: ソースコード分離
+src/apps/customer-app-dev/
+src/apps/customer-app-prod/
+.env: CUSTOMER_APP_DEV_DEV_ID=100, CUSTOMER_APP_PROD_DEV_ID=200
+
+# パターン3: スキーマ同期用
+src/apps/customer-app/
+.env: CUSTOMER_APP_DEV_ID=100, CUSTOMER_APP_PROD_ID=200
+kintone.config.ts: ids.dev=100, ids.prod=200
+```
 
 ### 2. 開発モード（ホットリロード）
 
@@ -245,6 +266,10 @@ MY_APP_ID=123
         └── 顧客管理アプリ (ID: 200)  ← 本番運用
 ```
 
+**セットアップ:**
+
+`npm run create`でパターン3（スキーマ同期用）を選択すると、以下が自動生成されます。
+
 **.env設定例:**
 
 ```env
@@ -260,17 +285,34 @@ CUSTOMER_APP_DEV_ID=100
 CUSTOMER_APP_PROD_ID=200
 ```
 
+**kintone.config.ts設定例:**
+
+```typescript
+export const apps: Apps = {
+  'customer-app': {
+    name: 'customer-app',
+    ids: {
+      dev: process.env.CUSTOMER_APP_DEV_ID,   // 100
+      prod: process.env.CUSTOMER_APP_PROD_ID  // 200
+    }
+  }
+};
+```
+
 **運用フロー:**
 
 ```bash
 # 開発環境のスキーマを取得
-npm run schema
+npm run schema -- customer-app
 
 # 本番環境のスキーマを取得（接続先は同じ、アプリIDが異なる）
-KINTONE_ENV=prod npm run schema
+KINTONE_ENV=prod npm run schema -- customer-app
 
 # 差分を比較
-npm run schema:diff
+npm run schema:diff -- customer-app
+
+# 開発環境のスキーマを本番環境にデプロイ
+npm run schema:deploy -- customer-app --execute
 ```
 
 ### ケース2: アカウント分離
