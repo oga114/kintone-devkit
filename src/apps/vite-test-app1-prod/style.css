@@ -1,6 +1,6 @@
-/* vite-test-app2 スタイル */
+/* vite-test-app1-prod スタイル */
 
-.vite-test-app2-custom-button {
+.vite-test-app1-prod-custom-button {
   background-color: #3498db;
   color: white;
   padding: 10px 20px;
@@ -11,11 +11,11 @@
   transition: background-color 0.3s;
 }
 
-.vite-test-app2-custom-button:hover {
+.vite-test-app1-prod-custom-button:hover {
   background-color: #2980b9;
 }
 
-.vite-test-app2-header {
+.vite-test-app1-prod-header {
   background-color: #f8f9fa;
   padding: 15px;
   margin-bottom: 20px;
