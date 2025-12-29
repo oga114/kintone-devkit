@@ -28,6 +28,9 @@ npm run sync -- my-app
 npm run schema -- my-app                    # Fetch schema (dev env)
 KINTONE_ENV=prod npm run schema -- my-app   # Fetch schema (prod env)
 npm run schema:diff                         # Compare dev vs prod
+npm run schema:deploy                       # Deploy schema (dry-run)
+npm run schema:deploy -- --execute          # Deploy schema (execute)
+npm run schema:deploy -- --from prod --to dev  # Reverse direction
 
 # App management (interactive)
 npm run create                   # Create new app
@@ -96,3 +99,4 @@ Available in `.claude/commands/`:
 - `/kintone-schema` - Fetch app schema
 - `/kintone-diff` - Compare environment schemas
 - `/kintone-fields` - Display field list from schema
+- `/kintone-deploy` - Deploy schema to another environment

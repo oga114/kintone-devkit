@@ -82,6 +82,8 @@ kintone-customize-vite/
 | `npm run schema` | アプリスキーマを取得（全アプリ） |
 | `npm run schema -- <app>` | アプリスキーマを取得（特定アプリ） |
 | `npm run schema:diff` | 環境間のスキーマ差分を検出 |
+| `npm run schema:deploy` | スキーマを別環境にデプロイ（ドライラン） |
+| `npm run schema:deploy -- --execute` | スキーマを別環境にデプロイ（実行） |
 | `npm run typecheck` | TypeScript型チェック |
 
 ## 使い方
@@ -173,6 +175,39 @@ KINTONE_ENV=prod npm run schema
 # 差分を検出
 npm run schema:diff
 ```
+
+### 8. スキーマを別環境にデプロイ
+
+開発環境のフィールド、ビュー、レイアウトを本番環境に反映します。
+
+```bash
+# ドライラン（確認のみ、変更は行わない）
+npm run schema:deploy
+
+# 実行（実際にデプロイ）
+npm run schema:deploy -- --execute
+
+# 方向を指定（本番 → 開発）
+npm run schema:deploy -- --from prod --to dev
+
+# 特定アプリのみデプロイ
+npm run schema:deploy -- my-app --execute
+```
+
+**デプロイされる内容:**
+
+| 項目 | 追加 | 更新 | 削除 |
+|------|------|------|------|
+| フィールド | ○ | ○（ラベル、設定のみ） | ○ |
+| ビュー | ○ | ○ | ○ |
+| レイアウト | - | ○ | - |
+
+**注意事項:**
+
+- システムフィールド（レコード番号、作成者など）は変更されません
+- フィールドの型は変更できません（kintone APIの制約）
+- 本番環境へ反映する前に必ずドライランで確認してください
+- カスタマイズ（JS/CSS）は同期されません（アプリID依存のため）
 
 ## 環境変数の設定
 
@@ -369,6 +404,7 @@ Claude Codeで使用できるカスタムコマンドが`.claude/commands/`に�
 | `/kintone-schema` | アプリのスキーマを取得 |
 | `/kintone-diff` | 環境間のスキーマ差分を検出 |
 | `/kintone-fields` | フィールド一覧を表示 |
+| `/kintone-deploy` | スキーマを別環境にデプロイ |
 
 ## ライセンス
 

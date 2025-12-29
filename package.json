@@ -12,6 +12,7 @@
     "remove": "tsx scripts/remove-app.ts",
     "schema": "tsx scripts/fetch-schema.ts",
     "schema:diff": "tsx scripts/diff-schema.ts",
+    "schema:deploy": "tsx scripts/deploy-schema.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
