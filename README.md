@@ -79,6 +79,9 @@ kintone-customize-vite/
 | `npm run upload -- <app>` | アップロード（特定アプリ） |
 | `npm run sync` | 既存ファイルを同期（全アプリ） |
 | `npm run sync -- <app>` | 既存ファイルを同期（特定アプリ） |
+| `npm run schema` | アプリスキーマを取得（全アプリ） |
+| `npm run schema -- <app>` | アプリスキーマを取得（特定アプリ） |
+| `npm run schema:diff` | 環境間のスキーマ差分を検出 |
 | `npm run typecheck` | TypeScript型チェック |
 
 ## 使い方
@@ -141,6 +144,36 @@ npm run sync -- my-app
 npm run remove
 ```
 
+### 6. スキーマ（設計情報）の取得
+
+kintoneアプリのフィールド、ビュー、レイアウト情報を取得してJSONファイルに保存します。
+
+```bash
+# 開発環境のスキーマを取得
+npm run schema
+
+# 本番環境のスキーマを取得
+KINTONE_ENV=prod npm run schema
+
+# 特定のアプリのみ
+npm run schema -- my-app
+```
+
+取得したスキーマは`.kintone/<appName>/schema.<env>.json`に保存されます。
+
+### 7. 環境間のスキーマ差分を検出
+
+開発環境と本番環境のスキーマを比較して差分を表示します。
+
+```bash
+# 事前に両環境のスキーマを取得
+KINTONE_ENV=dev npm run schema
+KINTONE_ENV=prod npm run schema
+
+# 差分を検出
+npm run schema:diff
+```
+
 ## 環境変数の設定
 
 `.env`ファイルに以下を設定：
@@ -153,6 +186,9 @@ KINTONE_PASSWORD=your-password
 
 # または APIトークンを使用
 # KINTONE_API_TOKEN=your-api-token
+
+# 環境識別子（スキーマ取得時に使用）
+KINTONE_ENV=dev
 
 # アプリIDの設定（npm run createで自動追加）
 MY_APP_ID=123
@@ -225,6 +261,16 @@ rm -rf node_modules/.vite
 # 型チェックを実行
 npm run typecheck
 ```
+
+## Claude Codeカスタムコマンド
+
+Claude Codeで使用できるカスタムコマンドが`.claude/commands/`に定義されています。
+
+| コマンド | 説明 |
+|---------|------|
+| `/kintone-schema` | アプリのスキーマを取得 |
+| `/kintone-diff` | 環境間のスキーマ差分を検出 |
+| `/kintone-fields` | フィールド一覧を表示 |
 
 ## ライセンス
 

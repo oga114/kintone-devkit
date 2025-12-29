@@ -10,6 +10,8 @@
     "sync": "tsx scripts/sync-existing.ts",
     "create": "tsx scripts/create-app.ts",
     "remove": "tsx scripts/remove-app.ts",
+    "schema": "tsx scripts/fetch-schema.ts",
+    "schema:diff": "tsx scripts/diff-schema.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
