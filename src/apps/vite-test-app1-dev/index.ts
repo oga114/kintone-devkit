@@ -6,7 +6,7 @@ import './style.css';
 
   // レコード一覧画面の表示イベント
   kintone.events.on('app.record.index.show', (event) => {
-    console.log('vite-test-app1-dev: レコード一覧画面を表示しました');
+    console.log('あああvite-test-app1-dev: レコード一覧画面を表示しました');
     return event;
   });
 
