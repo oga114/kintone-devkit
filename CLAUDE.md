@@ -36,6 +36,16 @@ npm run schema:deploy -- --from prod --to dev  # Reverse direction
 npm run create                   # Create new app
 npm run remove                   # Remove app
 
+# Plugin development
+npm run create:plugin            # Create new plugin (interactive)
+npm run dev:plugin -- my-plugin  # Plugin dev mode (build + upload watch)
+npm run build:plugin -- my-plugin # Build plugin
+npm run pack:plugin -- my-plugin  # Package plugin to ZIP
+npm run upload:plugin -- my-plugin # Upload plugin
+
+# WSL environment setup
+npm run setup:wsl                # Install Chrome dependencies for WSL
+
 # Type checking
 npm run typecheck
 ```

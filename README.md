@@ -11,6 +11,21 @@ TypeScript対応のkintoneカスタマイズ開発環境です。Viteによる�
 - **既存ファイル保持**: kintone上の既存ファイルを同期して保持
 - **対話式セットアップ**: `npm run create`で新規アプリを即座に作成
 
+## 動作環境
+
+| 環境 | カスタマイズ開発 | プラグイン開発 | 備考 |
+|------|----------------|---------------|------|
+| Windows | ✅ | ✅ | セットアップ不要 |
+| macOS | ✅ | ✅ | セットアップ不要 |
+| Linux | ✅ | ⚠️ | Chrome依存関係が必要な場合あり |
+| WSL | ✅ | ⚠️ | `npm run setup:wsl` が必要 |
+
+※ プラグイン開発の自動アップロード機能はPuppeteer（Chrome）を使用します。手動アップロードであればどの環境でも動作します。
+
+**必要なソフトウェア:**
+- Node.js 18以上
+- npm または yarn
+
 ## クイックスタート
 
 ### 初回セットアップ
@@ -24,6 +39,16 @@ cp .env.example .env
 
 # 3. .envファイルを編集してkintone環境情報を設定
 ```
+
+### WSL環境の場合
+
+プラグイン開発で自動アップロード機能を使用するには、追加の依存関係が必要です：
+
+```bash
+npm run setup:wsl
+```
+
+これにより、Puppeteer/Chrome用のライブラリがインストールされます。
 
 ### 開発を始める
 
@@ -89,6 +114,7 @@ kintone-customize-vite/
 | `npm run backup -- <app>` | レコードをバックアップ（特定アプリ） |
 | `npm run backup:restore -- <app>` | バックアップからレコードを復元 |
 | `npm run typecheck` | TypeScript型チェック |
+| `npm run setup:wsl` | WSL環境セットアップ（Chrome依存関係） |
 
 ## 使い方
 
@@ -467,6 +493,131 @@ import './style.css';
 1. 同期されたFILEファイル（既存のカスタマイズ）
 2. URL型ファイル（CDNなど）
 3. 新しいビルドファイル
+
+## プラグイン開発
+
+kintoneプラグインの開発もサポートしています。
+
+### プラグインとカスタマイズの違い
+
+| 項目 | カスタマイズ | プラグイン |
+|------|------------|-----------|
+| 配布範囲 | アプリ単位 | 複数アプリで再利用可能 |
+| 設定画面 | なし | あり（config.html） |
+| パッケージ | JS/CSSファイル | 署名付きZIP |
+| 秘密鍵 | 不要 | 必要（.ppk） |
+
+### プラグインコマンド一覧
+
+| コマンド | 説明 |
+|---------|------|
+| `npm run create:plugin` | 新しいプラグインを対話的に作成 |
+| `npm run dev:plugin` | プラグイン開発モード（全プラグイン） |
+| `npm run dev:plugin -- <plugin>` | プラグイン開発モード（特定プラグイン） |
+| `npm run build:plugin` | プラグインビルド（全プラグイン） |
+| `npm run build:plugin -- <plugin>` | プラグインビルド（特定プラグイン） |
+| `npm run pack:plugin -- <plugin>` | プラグインをZIPにパッケージング |
+| `npm run upload:plugin -- <plugin>` | プラグインをkintoneにアップロード |
+
+### プラグインディレクトリ構造
+
+```
+src/plugins/my-plugin/
+├── manifest.json       # プラグイン設定
+├── desktop.ts          # PC用カスタマイズ
+├── mobile.ts           # モバイル用（オプション）
+├── config.ts           # 設定画面用（オプション）
+├── html/
+│   └── config.html     # 設定画面HTML
+├── css/
+│   ├── desktop.css
+│   ├── mobile.css
+│   └── config.css
+└── image/
+    └── icon.png        # プラグインアイコン（54x54px）
+```
+
+### プラグイン開発フロー
+
+```bash
+# 1. プラグインを作成
+npm run create:plugin
+# 対話形式で名前、設定画面の有無、モバイル対応を選択
+
+# 2. 開発モードで起動
+npm run dev:plugin -- my-plugin
+# - ファイル変更を監視してビルド＆パッケージング
+# - 公式アップローダー（--watch）も自動起動
+# - アップローダーが失敗した場合は手動アップロード用のURLを表示
+
+# 3. 本番用ビルド
+NODE_ENV=production npm run build:plugin -- my-plugin
+
+# 4. ZIPにパッケージング
+npm run pack:plugin -- my-plugin
+# → dist/plugins/my-plugin.zip が生成される
+
+# 5. kintoneにアップロード（または手動でアップロード）
+npm run upload:plugin -- my-plugin
+```
+
+#### オプション
+
+```bash
+# アップローダーを起動しない（ビルド＆パッケージングのみ）
+npm run dev:plugin -- my-plugin --no-watch
+```
+
+### プラグインのサンプルコード
+
+```typescript
+// src/plugins/my-plugin/desktop.ts
+// ※CSSはmanifest.jsonで指定、TypeScriptでのimportは不要
+
+((PLUGIN_ID) => {
+  'use strict';
+
+  // プラグイン設定を取得
+  const config = kintone.plugin.app.getConfig(PLUGIN_ID);
+
+  kintone.events.on('app.record.index.show', (event) => {
+    console.log('プラグイン設定:', config);
+    return event;
+  });
+})(kintone.$PLUGIN_ID);
+```
+
+```typescript
+// src/plugins/my-plugin/config.ts（設定画面）
+import '../css/config.css';
+
+((PLUGIN_ID) => {
+  'use strict';
+
+  const config = kintone.plugin.app.getConfig(PLUGIN_ID);
+  const form = document.getElementById('plugin-config-form');
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const setting1 = (document.getElementById('setting1') as HTMLInputElement).value;
+
+    kintone.plugin.app.setConfig({ setting1 }, () => {
+      alert('設定を保存しました');
+      history.back();
+    });
+  });
+})(kintone.$PLUGIN_ID);
+```
+
+### 秘密鍵の管理
+
+プラグインの署名に使用する秘密鍵は `.keys/<plugin-name>.ppk` に保存されます。
+
+**重要:**
+- 秘密鍵を紛失するとプラグインを更新できなくなります
+- `.keys/` ディレクトリは `.gitignore` で除外されています
+- 秘密鍵は安全な場所にバックアップしてください
 
 ## トラブルシューティング
 

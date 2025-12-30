@@ -179,6 +179,49 @@ declare namespace kintone {
 
   // kintone.Promise
   const Promise: PromiseConstructor;
+
+  // プラグインAPI
+  namespace plugin {
+    namespace app {
+      /**
+       * プラグインの設定を取得
+       */
+      function getConfig(pluginId: string): { [key: string]: string };
+
+      /**
+       * プラグインの設定を保存
+       */
+      function setConfig(
+        config: { [key: string]: string },
+        successCallback?: () => void
+      ): void;
+
+      /**
+       * プロキシ設定を取得
+       */
+      function getProxyConfig(
+        url: string,
+        method: 'GET' | 'POST' | 'PUT' | 'DELETE'
+      ): {
+        headers: { [key: string]: string };
+        data: { [key: string]: string };
+      } | null;
+
+      /**
+       * プロキシ設定を保存
+       */
+      function setProxyConfig(
+        url: string,
+        method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+        headers: { [key: string]: string },
+        data: { [key: string]: string },
+        successCallback?: () => void
+      ): void;
+    }
+  }
+
+  // プラグインID（プラグイン実行時に自動で設定される）
+  const $PLUGIN_ID: string;
 }
 
 // グローバルにkintoneを宣言

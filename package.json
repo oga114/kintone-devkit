@@ -15,9 +15,17 @@
     "schema:deploy": "tsx scripts/deploy-schema.ts",
     "backup": "tsx scripts/backup-records.ts",
     "backup:restore": "tsx scripts/restore-records.ts",
-    "typecheck": "tsc --noEmit"
+    "create:plugin": "tsx scripts/create-plugin.ts",
+    "dev:plugin": "tsx scripts/dev-plugin.ts",
+    "build:plugin": "tsx scripts/build-plugin.ts",
+    "pack:plugin": "tsx scripts/pack-plugin.ts",
+    "upload:plugin": "tsx scripts/upload-plugin.ts",
+    "typecheck": "tsc --noEmit",
+    "setup:wsl": "bash scripts/setup-wsl.sh"
   },
   "devDependencies": {
+    "@kintone/plugin-packer": "^9.0.0",
+    "@kintone/plugin-uploader": "^10.0.0",
     "@kintone/rest-api-client": "^5.6.0",
     "@types/node": "^22.10.2",
     "chokidar": "^4.0.3",
