@@ -7,6 +7,14 @@ import { apps, getKintoneConfig, getAppId } from '../kintone.config.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+interface FileInfo {
+  contentType: string;
+  fileKey: string;
+  name: string;
+  size: string;
+  localPath?: string; // バックアップ時に追加
+}
+
 interface BackupMetadata {
   appId: string;
   appName: string;
@@ -14,6 +22,7 @@ interface BackupMetadata {
   backupAt: string;
   baseUrl: string;
   totalRecords: number;
+  totalFiles: number;
   query?: string;
 }
 
@@ -23,6 +32,90 @@ interface BackupData {
 }
 
 const RECORDS_PER_REQUEST = 500;
+
+/**
+ * レコード内のFILEフィールドからファイル情報を抽出
+ */
+function extractFileFields(record: any): { fieldCode: string; files: FileInfo[] }[] {
+  const fileFields: { fieldCode: string; files: FileInfo[] }[] = [];
+
+  for (const [fieldCode, field] of Object.entries(record)) {
+    const fieldData = field as any;
+    if (fieldData?.type === 'FILE' && Array.isArray(fieldData.value)) {
+      fileFields.push({
+        fieldCode,
+        files: fieldData.value as FileInfo[]
+      });
+    }
+    // サブテーブル内のFILEフィールドも処理
+    if (fieldData?.type === 'SUBTABLE' && Array.isArray(fieldData.value)) {
+      for (const row of fieldData.value) {
+        for (const [subFieldCode, subField] of Object.entries(row.value || {})) {
+          const subFieldData = subField as any;
+          if (subFieldData?.type === 'FILE' && Array.isArray(subFieldData.value)) {
+            fileFields.push({
+              fieldCode: `${fieldCode}.${row.id}.${subFieldCode}`,
+              files: subFieldData.value as FileInfo[]
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return fileFields;
+}
+
+/**
+ * ファイルをダウンロードして保存
+ */
+async function downloadAndSaveFiles(
+  client: KintoneRestAPIClient,
+  records: any[],
+  filesDir: string
+): Promise<number> {
+  let totalFiles = 0;
+
+  for (const record of records) {
+    const recordId = record.$id?.value || 'unknown';
+    const fileFields = extractFileFields(record);
+
+    for (const { fieldCode, files } of fileFields) {
+      for (let i = 0; i < files.length; i++) {
+        const fileInfo = files[i];
+        if (!fileInfo.fileKey) continue;
+
+        try {
+          // ファイルをダウンロード
+          const fileData = await client.file.downloadFile({
+            fileKey: fileInfo.fileKey
+          });
+
+          // ファイル名を生成（重複回避）
+          const safeFileName = `${recordId}_${fieldCode.replace(/\./g, '_')}_${i}_${fileInfo.name}`;
+          const localPath = resolve(filesDir, safeFileName);
+
+          // ファイルを保存
+          writeFileSync(localPath, Buffer.from(fileData));
+
+          // レコード内のファイル情報にローカルパスを追加
+          fileInfo.localPath = safeFileName;
+          totalFiles++;
+
+          process.stdout.write(`\r   📁 ファイルをダウンロード中... ${totalFiles}件`);
+        } catch (err) {
+          console.error(`\n   ⚠️  ファイルダウンロードエラー (${fileInfo.name}): ${(err as Error).message}`);
+        }
+      }
+    }
+  }
+
+  if (totalFiles > 0) {
+    console.log(`\r   📁 ファイルダウンロード完了: ${totalFiles}件      `);
+  }
+
+  return totalFiles;
+}
 
 /**
  * 全レコードを取得（10,000件以上対応）
@@ -85,7 +178,8 @@ async function backupApp(
   appId: string,
   environment: string,
   baseUrl: string,
-  query?: string
+  query?: string,
+  includeFiles: boolean = true
 ): Promise<string> {
   console.log(`\n📦 ${appName} (App ID: ${appId})`);
 
@@ -99,6 +193,28 @@ async function backupApp(
 
   // バックアップデータを作成
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backupId = `backup-${environment}-${timestamp}`;
+
+  // 保存先ディレクトリを作成
+  const backupDir = resolve(__dirname, '../.kintone', appName, 'backups');
+  if (!existsSync(backupDir)) {
+    mkdirSync(backupDir, { recursive: true });
+  }
+
+  // ファイルをダウンロード（オプション）
+  let totalFiles = 0;
+  if (includeFiles) {
+    const filesDir = resolve(backupDir, `${backupId}_files`);
+    mkdirSync(filesDir, { recursive: true });
+    totalFiles = await downloadAndSaveFiles(client, records, filesDir);
+
+    // ファイルがなければディレクトリを削除
+    if (totalFiles === 0) {
+      const { rmSync } = await import('fs');
+      rmSync(filesDir, { recursive: true, force: true });
+    }
+  }
+
   const backupData: BackupData = {
     metadata: {
       appId,
@@ -107,23 +223,18 @@ async function backupApp(
       backupAt: new Date().toISOString(),
       baseUrl,
       totalRecords: records.length,
+      totalFiles,
       query
     },
     records
   };
 
-  // 保存先ディレクトリを作成
-  const backupDir = resolve(__dirname, '../.kintone', appName, 'backups');
-  if (!existsSync(backupDir)) {
-    mkdirSync(backupDir, { recursive: true });
-  }
-
-  // ファイルに保存
-  const backupPath = resolve(backupDir, `backup-${environment}-${timestamp}.json`);
+  // JSONファイルに保存
+  const backupPath = resolve(backupDir, `${backupId}.json`);
   writeFileSync(backupPath, JSON.stringify(backupData, null, 2), 'utf-8');
 
   console.log(`   ✅ バックアップ保存: ${backupPath}`);
-  console.log(`   📊 レコード数: ${records.length}`);
+  console.log(`   📊 レコード数: ${records.length}, ファイル数: ${totalFiles}`);
 
   return backupPath;
 }
@@ -135,12 +246,14 @@ function parseArgs(): {
   targetApps: string[] | null;
   environment: string;
   query?: string;
+  includeFiles: boolean;
 } {
   const args = process.argv.slice(2);
 
   let targetApps: string[] | null = null;
   let environment = process.env.KINTONE_ENV || 'dev';
   let query: string | undefined;
+  let includeFiles = true;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -148,23 +261,28 @@ function parseArgs(): {
       environment = args[++i];
     } else if (arg === '--query' && args[i + 1]) {
       query = args[++i];
+    } else if (arg === '--no-files') {
+      includeFiles = false;
     } else if (!arg.startsWith('--') && !arg.startsWith('-')) {
       targetApps = arg.split(',').map(a => a.trim());
     }
   }
 
-  return { targetApps, environment, query };
+  return { targetApps, environment, query, includeFiles };
 }
 
 /**
  * メイン処理
  */
 async function main(): Promise<void> {
-  const { targetApps, environment, query } = parseArgs();
+  const { targetApps, environment, query, includeFiles } = parseArgs();
 
   console.log(`💾 レコードバックアップ (環境: ${environment})`);
   if (query) {
     console.log(`   クエリ: ${query}`);
+  }
+  if (!includeFiles) {
+    console.log(`   ⚠️  ファイル添付はスキップします（--no-files）`);
   }
 
   // 環境の接続設定を取得
@@ -203,7 +321,8 @@ async function main(): Promise<void> {
         appId,
         environment,
         config.baseUrl,
-        query
+        query,
+        includeFiles
       );
       if (backupPath) {
         backupPaths.push(backupPath);

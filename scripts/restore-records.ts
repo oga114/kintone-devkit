@@ -8,6 +8,14 @@ import { apps, getKintoneConfig, getAppId } from '../kintone.config.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+interface FileInfo {
+  contentType: string;
+  fileKey: string;
+  name: string;
+  size: string;
+  localPath?: string; // バックアップ時に追加されたローカルパス
+}
+
 interface BackupMetadata {
   appId: string;
   appName: string;
@@ -15,6 +23,7 @@ interface BackupMetadata {
   backupAt: string;
   baseUrl: string;
   totalRecords: number;
+  totalFiles: number;
   query?: string;
 }
 
@@ -63,6 +72,114 @@ function cleanRecordForInsert(record: any): any {
   }
 
   return cleaned;
+}
+
+/**
+ * ファイルをkintoneにアップロード
+ */
+async function uploadFile(
+  client: KintoneRestAPIClient,
+  filePath: string,
+  fileName: string
+): Promise<string> {
+  const fileContent = readFileSync(filePath);
+  const response = await client.file.uploadFile({
+    file: {
+      name: fileName,
+      data: fileContent
+    }
+  });
+  return response.fileKey;
+}
+
+/**
+ * レコード内のFILEフィールドを処理してファイルをアップロード
+ */
+async function processFileFields(
+  client: KintoneRestAPIClient,
+  records: any[],
+  filesDir: string
+): Promise<{ records: any[]; uploadedCount: number }> {
+  let uploadedCount = 0;
+  const processedRecords = JSON.parse(JSON.stringify(records)); // deep copy
+
+  for (const record of processedRecords) {
+    for (const [fieldCode, field] of Object.entries(record)) {
+      const fieldData = field as any;
+
+      // FILEフィールドの処理
+      if (fieldData?.type === 'FILE' && Array.isArray(fieldData.value)) {
+        const newFiles: any[] = [];
+
+        for (const fileInfo of fieldData.value as FileInfo[]) {
+          if (fileInfo.localPath) {
+            const localFilePath = resolve(filesDir, fileInfo.localPath);
+
+            if (existsSync(localFilePath)) {
+              try {
+                const newFileKey = await uploadFile(client, localFilePath, fileInfo.name);
+                newFiles.push({
+                  fileKey: newFileKey
+                });
+                uploadedCount++;
+                process.stdout.write(`\r   📁 ファイルをアップロード中... ${uploadedCount}件`);
+              } catch (err) {
+                console.error(`\n   ⚠️  ファイルアップロードエラー (${fileInfo.name}): ${(err as Error).message}`);
+              }
+            } else {
+              console.warn(`\n   ⚠️  ファイルが見つかりません: ${localFilePath}`);
+            }
+          }
+        }
+
+        // 新しいfileKeyで置き換え
+        fieldData.value = newFiles;
+      }
+
+      // サブテーブル内のFILEフィールドの処理
+      if (fieldData?.type === 'SUBTABLE' && Array.isArray(fieldData.value)) {
+        for (const row of fieldData.value) {
+          for (const [subFieldCode, subField] of Object.entries(row.value || {})) {
+            const subFieldData = subField as any;
+
+            if (subFieldData?.type === 'FILE' && Array.isArray(subFieldData.value)) {
+              const newFiles: any[] = [];
+
+              for (const fileInfo of subFieldData.value as FileInfo[]) {
+                if (fileInfo.localPath) {
+                  const localFilePath = resolve(filesDir, fileInfo.localPath);
+
+                  if (existsSync(localFilePath)) {
+                    try {
+                      const newFileKey = await uploadFile(client, localFilePath, fileInfo.name);
+                      newFiles.push({
+                        fileKey: newFileKey
+                      });
+                      uploadedCount++;
+                      process.stdout.write(`\r   📁 ファイルをアップロード中... ${uploadedCount}件`);
+                    } catch (err) {
+                      console.error(`\n   ⚠️  ファイルアップロードエラー (${fileInfo.name}): ${(err as Error).message}`);
+                    }
+                  } else {
+                    console.warn(`\n   ⚠️  ファイルが見つかりません: ${localFilePath}`);
+                  }
+                }
+              }
+
+              // 新しいfileKeyで置き換え
+              subFieldData.value = newFiles;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (uploadedCount > 0) {
+    console.log(`\r   📁 ファイルアップロード完了: ${uploadedCount}件      `);
+  }
+
+  return { records: processedRecords, uploadedCount };
 }
 
 /**
@@ -211,10 +328,17 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  // ファイルディレクトリを確認
+  const backupId = selectedBackup.replace('.json', '');
+  const filesDir = resolve(__dirname, '../.kintone', targetApp, 'backups', `${backupId}_files`);
+  const hasFiles = existsSync(filesDir);
+  const totalFiles = backup.metadata.totalFiles || 0;
+
   console.log(`\n📋 バックアップ情報:`);
   console.log(`   ファイル: ${selectedBackup}`);
   console.log(`   元環境: ${backup.metadata.environment}`);
   console.log(`   レコード数: ${backup.metadata.totalRecords}`);
+  console.log(`   添付ファイル数: ${totalFiles}${hasFiles ? '' : ' (ファイルなし)'}`);
   console.log(`   バックアップ日時: ${backup.metadata.backupAt}`);
 
   // 復元先の設定
@@ -257,8 +381,24 @@ async function main(): Promise<void> {
   });
 
   try {
-    const addedCount = await addRecords(client, appId, backup.records);
-    console.log(`\n✅ 復元完了！ ${addedCount}件のレコードを追加しました。`);
+    let recordsToAdd = backup.records;
+    let uploadedFilesCount = 0;
+
+    // ファイルがある場合は先にアップロード
+    if (hasFiles && totalFiles > 0) {
+      console.log(`\n📁 添付ファイルを処理中...`);
+      const result = await processFileFields(client, backup.records, filesDir);
+      recordsToAdd = result.records;
+      uploadedFilesCount = result.uploadedCount;
+    }
+
+    const addedCount = await addRecords(client, appId, recordsToAdd);
+
+    console.log(`\n✅ 復元完了！`);
+    console.log(`   レコード: ${addedCount}件を追加`);
+    if (uploadedFilesCount > 0) {
+      console.log(`   ファイル: ${uploadedFilesCount}件をアップロード`);
+    }
   } catch (err) {
     console.error(`\n❌ 復元エラー:`, (err as Error).message);
     if ((err as any).errors) {

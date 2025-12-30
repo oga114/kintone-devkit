@@ -43,6 +43,11 @@ npm run build:plugin -- my-plugin # Build plugin
 npm run pack:plugin -- my-plugin  # Package plugin to ZIP
 npm run upload:plugin -- my-plugin # Upload plugin
 
+# Record backup/restore (with file attachments)
+npm run backup -- my-app         # Backup records (with files)
+npm run backup -- my-app --no-files  # Backup records (without files)
+npm run backup:restore -- my-app # Restore from latest backup
+
 # WSL environment setup
 npm run setup:wsl                # Install Chrome dependencies for WSL
 
