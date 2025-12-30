@@ -1,9 +1,15 @@
+/**
+ * kintone プラグイン サンプルコード（PC版）
+ *
+ * このファイルはプラグインのPC版カスタマイズのテンプレートです。
+ * npm run create:plugin でプラグインを作成すると、このようなファイルが自動生成されます。
+ */
 ((PLUGIN_ID) => {
   'use strict';
 
   // プラグイン設定を取得
   const config = kintone.plugin.app.getConfig(PLUGIN_ID);
-  console.log('test loaded', config);
+  console.log('Example plugin loaded', config);
 
   kintone.events.on('app.record.index.show', (event) => {
     // レコード一覧画面の処理

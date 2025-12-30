@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "type": "APP",
   "name": {
-    "ja": "test",
-    "en": "test"
+    "ja": "サンプルプラグイン",
+    "en": "Example Plugin"
   },
   "description": {
-    "ja": "test",
-    "en": "test"
+    "ja": "kintone-devkitのサンプルプラグインです",
+    "en": "Example plugin for kintone-devkit"
   },
   "icon": "image/icon.png",
   "desktop": {
