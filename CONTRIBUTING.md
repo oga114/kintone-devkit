@@ -6,7 +6,7 @@
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/your-username/kintone-devkit.git
+git clone https://github.com/oga114/kintone-devkit.git
 cd kintone-devkit
 
 # 依存パッケージをインストール

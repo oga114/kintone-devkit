@@ -1,8 +1,8 @@
 # kintone-devkit
 
-[![CI](https://github.com/your-username/kintone-devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/kintone-devkit/actions/workflows/ci.yml)
+[![CI](https://github.com/oga114/kintone-devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/oga114/kintone-devkit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
 
 TypeScript + Vite によるkintone開発ツールキットです。カスタマイズ開発、プラグイン開発、スキーマ管理を統合した開発環境を提供します。
 
@@ -29,7 +29,7 @@ TypeScript + Vite によるkintone開発ツールキットです。カスタマ�
 ※ プラグイン開発の自動アップロード機能はPuppeteer（Chrome）を使用します。手動アップロードであればどの環境でも動作します。
 
 **必要なソフトウェア:**
-- Node.js 18以上
+- Node.js 20以上
 - npm または yarn
 
 ## クイックスタート

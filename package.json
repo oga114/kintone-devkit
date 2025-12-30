@@ -13,14 +13,17 @@
     "schema",
     "devkit"
   ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/kintone-devkit.git"
+    "url": "https://github.com/oga114/kintone-devkit.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/kintone-devkit/issues"
+    "url": "https://github.com/oga114/kintone-devkit/issues"
   },
-  "homepage": "https://github.com/your-username/kintone-devkit#readme",
+  "homepage": "https://github.com/oga114/kintone-devkit#readme",
   "scripts": {
     "dev": "tsx scripts/dev.ts",
     "build": "tsx scripts/build.ts",
