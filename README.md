@@ -1,14 +1,20 @@
-# Kintone Customize Vite
+# kintone-devkit
 
-TypeScript対応のkintoneカスタマイズ開発環境です。Viteによる高速ビルド、ホットリロード、複数アプリの管理機能を提供します。
+[![CI](https://github.com/your-username/kintone-devkit/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/kintone-devkit/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+
+TypeScript + Vite によるkintone開発ツールキットです。カスタマイズ開発、プラグイン開発、スキーマ管理を統合した開発環境を提供します。
 
 ## 特徴
 
-- **TypeScript対応**: 型安全なkintoneカスタマイズ開発
+- **TypeScript対応**: 型安全なkintone開発
 - **高速ビルド**: Viteによる高速なビルド
 - **ホットリロード**: ファイル変更を検知して自動ビルド＆アップロード
+- **プラグイン開発**: 署名・パッケージング・アップロードを自動化
+- **スキーマ管理**: 環境間の差分検出・デプロイ
+- **バックアップ**: レコード＆添付ファイルのバックアップ・復元
 - **複数アプリ管理**: 複数のkintoneアプリを一つのプロジェクトで管理
-- **既存ファイル保持**: kintone上の既存ファイルを同期して保持
 - **対話式セットアップ**: `npm run create`で新規アプリを即座に作成
 
 ## 動作環境

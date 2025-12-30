@@ -6,8 +6,8 @@
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/your-username/kintone-customize-vite.git
-cd kintone-customize-vite
+git clone https://github.com/your-username/kintone-devkit.git
+cd kintone-devkit
 
 # 依存パッケージをインストール
 npm install
