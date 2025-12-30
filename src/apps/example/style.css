@@ -1,0 +1,20 @@
+/**
+ * kintone カスタマイズ用スタイル
+ *
+ * このファイルでアプリのスタイルをカスタマイズできます。
+ * ビルド時に example.css として出力されます。
+ */
+
+/* サンプル: レコード一覧のヘッダーをハイライト */
+/*
+.recordlist-header-gaia {
+  background-color: #f0f8ff;
+}
+*/
+
+/* サンプル: 保存ボタンを強調 */
+/*
+.gaia-ui-actionmenu-save {
+  background-color: #4caf50 !important;
+}
+*/

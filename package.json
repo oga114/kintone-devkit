@@ -3,6 +3,22 @@
   "version": "2.0.0",
   "description": "TypeScript対応 kintoneカスタマイズ開発環境 with Vite",
   "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "kintone",
+    "vite",
+    "typescript",
+    "customize",
+    "plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/kintone-customize-vite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/kintone-customize-vite/issues"
+  },
+  "homepage": "https://github.com/your-username/kintone-customize-vite#readme",
   "scripts": {
     "dev": "tsx scripts/dev.ts",
     "build": "tsx scripts/build.ts",
