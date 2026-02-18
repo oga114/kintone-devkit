@@ -671,16 +671,22 @@ rm -rf node_modules/.vite
 npm run typecheck
 ```
 
-## Claude Codeカスタムコマンド
+## Claude Codeスキル
 
-Claude Codeで使用できるカスタムコマンドが`.claude/commands/`に定義されています。
+Claude Codeで使用できるスキルが`.claude/skills/`に定義されています。
 
-| コマンド | 説明 |
-|---------|------|
-| `/kintone-schema` | アプリのスキーマを取得 |
-| `/kintone-diff` | 環境間のスキーマ差分を検出 |
-| `/kintone-fields` | フィールド一覧を表示 |
-| `/kintone-deploy` | スキーマを別環境にデプロイ |
+| スキル | 説明 |
+|--------|------|
+| `kintone-schema` | アプリのスキーマを取得（プロジェクトスクリプト + REST API） |
+| `kintone-diff` | 環境間のスキーマ差分を検出 |
+| `kintone-fields` | フィールド一覧を表示 |
+| `kintone-deploy` | カスタマイズ（JS/CSS）とスキーマのデプロイ |
+| `kintone-provision` | 設計ドキュメントからスペース・アプリを一括作成 |
+| `kintone-docs` | アプリ設計ドキュメントを自動生成 |
+| `kintone-e2e` | Playwright MCPによるE2Eテスト |
+| `kintone-mock` | テスト用モックデータを生成 |
+| `kintone-query` | 自然言語からkintoneクエリを構築 |
+| `kintone-record` | REST APIでレコードのCRUD操作 |
 
 ## ライセンス
 
