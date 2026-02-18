@@ -120,3 +120,4 @@ Available in `.claude/skills/`:
 - `kintone-mock` - Generate mock data for testing
 - `kintone-query` - Build kintone query strings from natural language
 - `kintone-record` - CRUD operations via REST API
+- `kintone-provision` - Provision spaces/apps from Markdown design docs
