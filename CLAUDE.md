@@ -108,10 +108,15 @@ import './style.css';
 })();
 ```
 
-## Claude Code Custom Commands
+## Claude Code Skills
 
-Available in `.claude/commands/`:
-- `/kintone-schema` - Fetch app schema
-- `/kintone-diff` - Compare environment schemas
-- `/kintone-fields` - Display field list from schema
-- `/kintone-deploy` - Deploy schema to another environment
+Available in `.claude/skills/`:
+- `kintone-schema` - Fetch app schema (project scripts + REST API)
+- `kintone-diff` - Compare environment schemas
+- `kintone-fields` - Display field list from schema
+- `kintone-deploy` - Deploy customizations (JS/CSS) and schemas
+- `kintone-docs` - Generate app design documents
+- `kintone-e2e` - E2E testing with Playwright MCP
+- `kintone-mock` - Generate mock data for testing
+- `kintone-query` - Build kintone query strings from natural language
+- `kintone-record` - CRUD operations via REST API
